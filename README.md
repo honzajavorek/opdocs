@@ -1,6 +1,6 @@
 # opdocs
 
-Use 1Password as your home docs
+Honza Javorek's way of using 1Password for private documentation
 
 ## Installation
 
