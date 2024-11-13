@@ -5,7 +5,7 @@ Honza Javorek's way of using 1Password for private documentation
 ## Installation
 
 1. Install the [1Password CLI](https://developer.1password.com/docs/cli/)
-1. Install this tool as `pipx install 'git+https://github.com/honzajavorek/homedocs.git'`
+1. Install this tool as `pipx install 'git+https://github.com/honzajavorek/opdocs.git'`
 
 ## Usage
 
