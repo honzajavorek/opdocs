@@ -7,12 +7,22 @@ import tempfile
 import click
 
 
-@click.command()
+@click.group(invoke_without_command=True)
 @click.option("--family", "vault", flag_value="Shared", help="Use the Shared vault", default=True)
 @click.option("--me", "vault", flag_value="Private", help="Use the Private vault")
-def main(vault: str):
+@click.pass_context
+def main(context: click.Context, vault: str):
+    context.obj = {"vault": vault}
+    if context.invoked_subcommand is None:
+        context.invoke(edit)
+
+
+@main.command()
+@click.pass_context
+def edit(context: click.Context):
     click.echo("Read https://support.1password.com/markdown/ before editing!")
 
+    vault = context.obj["vault"]
     result = subprocess.run([
         "op", "item", "list",
         "--format", "json",
