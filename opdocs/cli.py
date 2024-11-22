@@ -1,12 +1,10 @@
 from dataclasses import dataclass
 from datetime import datetime
-from email.policy import default
 import json
 from operator import itemgetter
 from pathlib import Path
 import shutil
 import subprocess
-import tempfile
 
 import click
 
@@ -43,37 +41,18 @@ def edit(context: click.Context):
     item = prompt_item(vault)
     note = get_note(vault, item)
 
-    with tempfile.NamedTemporaryFile(mode="w+") as f:
-        f.write(note.document)
-        f.seek(0)
-        subprocess.run(["code", "-w", f.name], check=True)
-        f.seek(0)
-        edited_document = f.read().strip()
-
-    title_part, value_part = edited_document.split("\n", 1)
-    edited_title = title_part.lstrip("#").strip()
-    edited_value = value_part.strip()
-
-    args = []
-    if edited_title != note.title:
-        args.extend(["--title", edited_title])
-    if edited_value != note.value:
-        args.extend([f"notesPlain={edited_value}"])
-    if args:
-        subprocess.run(
-            [
-                "op",
-                "item",
-                "edit",
-                item["id"],
-                "--vault",
-                vault,
-                *args,
-            ],
-            check=True,
-            text=True,
-            capture_output=True,
+    if edited_document := click.edit(note.document, extension=".md", require_save=True):
+        title_part, value_part = edited_document.split("\n", 1)
+        edited_title = title_part.lstrip("#").strip()
+        edited_value = value_part.strip()
+        update_note(
+            vault,
+            item,
+            title=None if edited_title == note.title else edited_title,
+            value=None if edited_value == note.value else edited_value,
         )
+    else:
+        click.echo("No changes made", err=True)
 
 
 @main.command()
@@ -158,3 +137,28 @@ def get_note(vault: str, item: dict) -> Note:
     value = field["value"].strip()
     title = item["title"]
     return Note(value=value, title=title, document=f"# {title}\n\n{value}")
+
+
+def update_note(
+    vault: str, item: dict, title: str | None = None, value: str | None = None
+):
+    args = []
+    if title is not None:
+        args.extend(["--title", title])
+    if value is not None:
+        args.append(f"notesPlain={value}")
+    if args:
+        subprocess.run(
+            [
+                "op",
+                "item",
+                "edit",
+                item["id"],
+                "--vault",
+                vault,
+                *args,
+            ],
+            check=True,
+            text=True,
+            capture_output=True,
+        )
